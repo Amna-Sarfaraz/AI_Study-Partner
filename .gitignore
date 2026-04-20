@@ -1,0 +1,10 @@
+.env
+.codex
+venv/
+__pycache__/
+*.pyc
+backend/__pycache__/
+backend/chroma_store/
+backend/uploads/
+frontend/dist/
+node_modules/

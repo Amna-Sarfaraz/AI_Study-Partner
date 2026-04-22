@@ -1,0 +1,22 @@
+System Description
+
+System Name:
+AI Study Partner
+
+Purpose of the System:
+AI Study Partner is a smart study support system designed to help users learn more effectively from their own documents. It allows users to upload study materials, organize them in shared study rooms, and use AI-powered tools to better understand and review the content.
+
+Main Features of the System:
+- User registration and login
+- Creation of shared study rooms for up to two users
+- Uploading of PDF and TXT documents
+- Automatic document summarization
+- Question and answer support based on uploaded content
+- Quiz generation for self-assessment
+- Flashcard generation for quick revision
+- Secure access control for users and study materials
+
+Types of Users:
+- Students who want to study smarter using AI-supported tools
+- Study partners who want to share materials and learn together
+- Independent learners who want summaries, quizzes, and flashcards from their documents

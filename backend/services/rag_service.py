@@ -13,24 +13,41 @@ from services.ai_service import generate_text
 # SETUP — runs once when the file is imported
 # ─────────────────────────────────────────
 
-# ChromaDB client — stores data in a local folder called "chroma_store"
-# This folder is created automatically if it doesn't exist
-chroma_client = chromadb.PersistentClient(path="chroma_store")
+CHROMA_PATH = os.getenv("CHROMA_PATH", "chroma_store")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "BAAI/bge-small-en-v1.5")
 
-# Get (or create) a "collection" inside ChromaDB
-# Think of a collection like a table — it holds all our chunk vectors
-collection = chroma_client.get_or_create_collection(
-    name="study_chunks",
-    metadata={"hnsw:space": "cosine"}  # use cosine similarity for search
-)
+_collection = None
+_embeddings_model = None
 
-# Load the embedding model locally (downloads ~130MB on first run)
-# This converts text → a list of numbers (a vector)
-embeddings_model = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-small-en-v1.5",
-    model_kwargs={"device": "cpu"},       # runs on CPU — no GPU needed
-    encode_kwargs={"normalize_embeddings": True}  # normalizes for cosine similarity
-)
+
+def get_collection():
+    """
+    Lazily create the collection so the API can boot without initializing
+    the full retrieval layer during startup.
+    """
+    global _collection
+    if _collection is None:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        _collection = chroma_client.get_or_create_collection(
+            name="study_chunks",
+            metadata={"hnsw:space": "cosine"}
+        )
+    return _collection
+
+
+def get_embeddings_model():
+    """
+    Load the embedding model only when a request needs it.
+    This reduces startup memory pressure on Render.
+    """
+    global _embeddings_model
+    if _embeddings_model is None:
+        _embeddings_model = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL_NAME,
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True}
+        )
+    return _embeddings_model
 
 # ─────────────────────────────────────────
 # TEXT SPLITTER SETUP
@@ -100,6 +117,7 @@ def embed_chunks(chunks: list[str]) -> list[list[float]]:
     Similar text → similar vectors → can be searched later.
     """
     # embed_documents() handles a batch of texts at once
+    embeddings_model = get_embeddings_model()
     vectors = embeddings_model.embed_documents(chunks)
     return vectors  # e.g. [[0.12, -0.34, 0.56, ...], [...], ...]
 
@@ -153,6 +171,7 @@ def store_chunks(
     db.commit()
 
     # Insert all chunks into ChromaDB at once (more efficient than one by one)
+    collection = get_collection()
     collection.add(
         ids=chroma_ids,
         documents=chroma_docs,
@@ -216,6 +235,8 @@ async def answer_question(question: str, room_id: str = None) -> dict:
 
     # Step 1: Embed the question using the SAME model used for documents
     # (they must match — same model = same vector space = comparable)
+    embeddings_model = get_embeddings_model()
+    collection = get_collection()
     question_vector = embeddings_model.embed_query(question)
 
     # Step 2: Search ChromaDB for the 5 most similar chunks
@@ -327,6 +348,8 @@ async def retrieve_document_context(
     candidate_map = {}
 
     for query in profile["queries"]:
+        embeddings_model = get_embeddings_model()
+        collection = get_collection()
         query_vector = embeddings_model.embed_query(query)
         results = collection.query(
             query_embeddings=[query_vector],
@@ -409,6 +432,7 @@ def delete_document_chunks(doc_id: str):
     PostgreSQL chunks are deleted automatically via CASCADE.
     """
     # ChromaDB can delete by metadata filter
+    collection = get_collection()
     collection.delete(
         where={"document_id": doc_id}
     )

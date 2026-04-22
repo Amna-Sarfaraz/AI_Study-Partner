@@ -2,10 +2,28 @@
 # 2. Connects all your routes (auth, documents, Q&A, quiz)
 # 3. Sets up CORS (allows frontend to talk to backend)
 # 4. Connects to the database on startup
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routes import auth, documents, qa, quiz, flashcards, rooms
+
+
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "https://ai-study-partner-five.vercel.app",
+]
+
+
+def get_allowed_origins() -> list[str]:
+    raw_origins = os.getenv("CORS_ORIGINS", "")
+    if not raw_origins.strip():
+        return DEFAULT_CORS_ORIGINS
+
+    parsed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    return parsed_origins or DEFAULT_CORS_ORIGINS
 
 
 
@@ -18,12 +36,10 @@ app= FastAPI(
 # Setup CORS (allow frontend to talk to backend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000",   # React frontend
-                   "http://localhost:5000"],  # HTML fronend
-                   allow_credentials=True,
-                   allow_methods=["*"],
-                   allow_headers= ["*"],
-
+    allow_origins=get_allowed_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Create database tables on startup

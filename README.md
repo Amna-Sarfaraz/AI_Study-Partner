@@ -22,6 +22,40 @@ The project uses:
 - Basic access control for rooms, documents, quizzes, and flashcards
 - Basic login throttling against repeated failed sign-in attempts
 
+## Screenshots
+
+### 1. Authentication Page
+
+![Authentication Page](images/1.png)
+
+### 2. Study Rooms Dashboard
+
+![Study Rooms Dashboard](images/2.png)
+
+### 3. Document Upload and Management
+
+![Document Upload and Management](images/3.png)
+
+### 4. AI-Generated Document Summary
+
+![AI-Generated Document Summary](images/4.png)
+
+### 5. Document-Based Q&A
+
+![Document-Based Q&A](images/5.png)
+
+### 6. Quiz Interface
+
+![Quiz Interface](images/6.png)
+
+### 7. Flashcards Question View
+
+![Flashcards Question View](images/7.png)
+
+### 8. Flashcards Answer View
+
+![Flashcards Answer View](images/8.png)
+
 ## Project Structure
 
 ```text

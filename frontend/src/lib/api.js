@@ -2,6 +2,55 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000
 const TOKEN_KEY = "ai-study-partner-token";
 const USER_KEY = "ai-study-partner-user";
 
+function formatApiError(detail) {
+  if (!detail) {
+    return "";
+  }
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        if (item && typeof item === "object") {
+          const field = Array.isArray(item.loc) ? item.loc.slice(1).join(".") : "";
+          const message = typeof item.msg === "string" ? item.msg : "";
+
+          if (field && message) {
+            return `${field}: ${message}`;
+          }
+
+          if (message) {
+            return message;
+          }
+        }
+
+        return "";
+      })
+      .filter(Boolean);
+
+    return messages.join(". ");
+  }
+
+  if (typeof detail === "object") {
+    if (typeof detail.message === "string") {
+      return detail.message;
+    }
+
+    if (typeof detail.error === "string") {
+      return detail.error;
+    }
+  }
+
+  return "";
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -36,10 +85,7 @@ async function parseResponse(response) {
     : await response.text();
 
   if (!response.ok) {
-    const message =
-      typeof payload === "string"
-        ? payload
-        : payload?.detail || "Request failed";
+    const message = typeof payload === "string" ? payload : formatApiError(payload?.detail) || "Request failed";
     throw new Error(message);
   }
 

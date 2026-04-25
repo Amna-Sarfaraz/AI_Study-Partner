@@ -154,12 +154,12 @@ def get_current_user(
 @router.post("/register", status_code=201)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
     
-    # 1. Check 2 user limit
+    # 1. Check registration limit
     user_count = db.query(User).count()
     if user_count >= MAX_USERS:
         raise HTTPException(
             status_code=400,
-            detail="Maximum 2 users allowed. Registration is closed."
+            detail=f"Maximum {MAX_USERS} users allowed. Registration is closed."
         )
 
     # 2. Check if email already exists
